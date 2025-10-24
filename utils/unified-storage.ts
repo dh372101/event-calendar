@@ -248,7 +248,7 @@ class UnifiedStorage {
         
         // Test IndexedDB functionality
         await indexedDBStorage.init()
-        await indexedDBStorage.getDatabaseStats()
+        await indexedDBStorage.getStats()
         
         this.storage = indexedDBStorage
         this.storageType = 'indexedDB'
