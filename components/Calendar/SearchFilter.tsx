@@ -230,7 +230,7 @@ export default function SearchFilter({ onFilterChange, onSearchChange }: SearchF
                   className="crayon-input w-full"
                 >
                   <option value="">所有地点</option>
-                  {placeOptions.map(place => (
+                  {placeOptions.map((place: string) => (
                     <option key={place} value={place}>{place}</option>
                   ))}
                 </select>
@@ -244,7 +244,7 @@ export default function SearchFilter({ onFilterChange, onSearchChange }: SearchF
                   className="crayon-input w-full"
                 >
                   <option value="">所有城市</option>
-                  {cityOptions.map(city => (
+                  {cityOptions.map((city: string) => (
                     <option key={city} value={city}>{city}</option>
                   ))}
                 </select>

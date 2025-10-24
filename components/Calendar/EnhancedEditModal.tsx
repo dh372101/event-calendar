@@ -2,201 +2,214 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { X, Palette, Droplet, Clock, Repeat, Star, AlertCircle } from 'lucide-react'
-import { EventData, TagConfig } from '@/types'
-import { getEvent, saveEvent, deleteEvent, getStorageData } from '@/utils/storage'
+import { X, Save, Trash2, Plus, X as CloseIcon } from 'lucide-react'
+import { EventData } from '@/types'
+import { saveEvent, getStorageData } from '@/utils/storage'
 
-interface EditModalProps {
-  date: Date
+interface EnhancedEditModalProps {
+  event?: EventData
+  date?: Date
+  tags: any
   onClose: () => void
   onSave: () => void
 }
 
 const DEFAULT_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFE66D',
-  '#FF9F1C', '#A8E6CF', '#FFAAA5', '#D4A5A5', '#9BDEAC',
-  '#FDCB6E', '#E17055', '#00B894', '#00CEC9', '#6C5CE7',
-  '#FD79A8', '#FDCB6E', '#E17055', '#00B894', '#00CEC9'
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFA07A',
+  '#98D8C8', '#FFD93D', '#6C5CE7', '#A8E6CF', '#FFD3B6',
+  '#FF8B94', '#A8DADC', '#F4A261', '#E76F51', '#2A9D8F'
 ]
 
-interface RecurringEvent {
-  enabled: boolean
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
-  interval: number // Every N days/weeks/months/years
-  endDate?: string
-}
-
-export default function EnhancedEditModal({ date, onClose, onSave }: EditModalProps) {
-  const [event, setEvent] = useState<EventData>({
-    date: format(date, 'yyyy-MM-dd'),
-    type: [],
+export default function EnhancedEditModal({ 
+  event, 
+  date, 
+  tags, 
+  onClose, 
+  onSave 
+}: EnhancedEditModalProps) {
+  const [formData, setFormData] = useState<Partial<EventData>>({
     name: '',
+    type: [],
     place: '',
     city: '',
-    color: DEFAULT_COLORS[0]
+    color: '#FF6B6B'
   })
-  
-  const [tags, setTags] = useState<TagConfig>({ type: {}, place: [], city: [] })
+  const [isLoading, setIsLoading] = useState(false)
+  const [newType, setNewType] = useState('')
+  const [newPlace, setNewPlace] = useState('')
+  const [newCity, setNewCity] = useState('')
   const [showColorPicker, setShowColorPicker] = useState(false)
-  const [customColor, setCustomColor] = useState('')
 
-  // Enhanced fields
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
-  const [notes, setNotes] = useState('')
-  const [recurring, setRecurring] = useState<RecurringEvent>({
-    enabled: false,
-    frequency: 'weekly',
-    interval: 1
-  })
+  const isEdit = !!event
+  const eventDate = event?.date || format(date || new Date(), 'yyyy-MM-dd')
 
   useEffect(() => {
-    const existingEvent = getEvent(format(date, 'yyyy-MM-dd'))
-    if (existingEvent) {
-      setEvent(existingEvent)
-      // Extract time from extended event data if it exists
-      if ((existingEvent as any).startTime) setStartTime((existingEvent as any).startTime)
-      if ((existingEvent as any).endTime) setEndTime((existingEvent as any).endTime)
-      if ((existingEvent as any).priority) setPriority((existingEvent as any).priority)
-      if ((existingEvent as any).notes) setNotes((existingEvent as any).notes)
-      if ((existingEvent as any).recurring) setRecurring((existingEvent as any).recurring)
+    if (event) {
+      setFormData(event)
+    } else if (date) {
+      setFormData(prev => ({ ...prev, date: format(date, 'yyyy-MM-dd') }))
     }
+  }, [event, date])
 
-    const { tags: storedTags } = getStorageData()
-    setTags(storedTags)
-  }, [date])
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
 
-  const handleTypeToggle = (type: string) => {
-    setEvent(prev => ({
+    try {
+      const eventData: EventData = {
+        date: eventDate,
+        name: formData.name || '',
+        type: formData.type || [],
+        place: formData.place || '',
+        city: formData.city || '',
+        color: formData.color || '#FF6B6B'
+      }
+
+      await saveEvent(eventData)
+      onSave()
+      onClose()
+    } catch (error) {
+      console.error('Error saving event:', error)
+      alert('保存事件时出错，请重试')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const addType = (type: string) => {
+    if (type && !formData.type?.includes(type)) {
+      setFormData(prev => ({
+        ...prev,
+        type: [...(prev.type || []), type]
+      }))
+      setNewType('')
+    }
+  }
+
+  const removeType = (type: string) => {
+    setFormData(prev => ({
       ...prev,
-      type: prev.type.includes(type)
-        ? prev.type.filter(t => t !== type)
-        : [...prev.type, type]
+      type: (prev.type || []).filter(t => t !== type)
     }))
   }
 
-  const handleSave = () => {
-    // Enhanced event with additional fields
-    const enhancedEvent = {
-      ...event,
-      startTime,
-      endTime,
-      priority,
-      notes,
-      recurring: recurring.enabled ? recurring : undefined
-    }
-    
-    saveEvent(enhancedEvent)
-    
-    // Handle recurring events
-    if (recurring.enabled) {
-      saveRecurringEvents(enhancedEvent, recurring)
-    }
-    
-    onSave()
-  }
-
-  const saveRecurringEvents = (baseEvent: EventData, recurringConfig: RecurringEvent) => {
-    const startDate = new Date(baseEvent.date)
-    const endDate = recurringConfig.endDate ? new Date(recurringConfig.endDate) : new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate())
-    
-    let currentDate = new Date(startDate)
-    
-    while (currentDate <= endDate) {
-      currentDate = new Date(currentDate)
-      
-      switch (recurringConfig.frequency) {
-        case 'daily':
-          currentDate.setDate(currentDate.getDate() + recurringConfig.interval)
-          break
-        case 'weekly':
-          currentDate.setDate(currentDate.getDate() + (7 * recurringConfig.interval))
-          break
-        case 'monthly':
-          currentDate.setMonth(currentDate.getMonth() + recurringConfig.interval)
-          break
-        case 'yearly':
-          currentDate.setFullYear(currentDate.getFullYear() + recurringConfig.interval)
-          break
-      }
-      
-      if (currentDate <= endDate) {
-        const recurringEvent = {
-          ...baseEvent,
-          date: format(currentDate, 'yyyy-MM-dd'),
-          name: `${baseEvent.name} (重复)`
-        }
-        saveEvent(recurringEvent)
+  const handleKeyPress = (e: React.KeyboardEvent, action: string, value: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (action === 'type') addType(value)
+      else if (action === 'place' && value) {
+        setFormData(prev => ({ ...prev, place: value }))
+        setNewPlace('')
+      } else if (action === 'city' && value) {
+        setFormData(prev => ({ ...prev, city: value }))
+        setNewCity('')
       }
     }
   }
 
-  const handleDelete = () => {
-    if (confirm('确定要删除这个事件吗？')) {
-      deleteEvent(event.date)
-      onSave()
-    }
-  }
-
-  const handleColorSelect = (color: string) => {
-    setEvent(prev => ({ ...prev, color }))
-    setShowColorPicker(false)
-  }
-
-  const handleCustomColor = () => {
-    if (customColor && /^#[0-9A-F]{6}$/i.test(customColor)) {
-      handleColorSelect(customColor)
-    }
-  }
-
-  const typeOptions = Object.keys(tags.type || {})
-  const placeOptions = tags.place || []
-  const cityOptions = tags.city || []
-
-  const priorityColors = {
-    low: '#4ECDC4',
-    medium: '#FFE66D', 
-    high: '#FF6B6B'
-  }
+  const isValid = formData.name && formData.type && formData.type.length > 0
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto crayon-border">
-        {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">
-            {format(date, 'yyyy年MM月dd日')}
-          </h3>
-          <button onClick={onClose} className="crayon-button p-2">
-            <X size={16} />
-          </button>
+      <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              {isEdit ? '编辑事件' : '添加事件'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          <div className="text-sm text-gray-600 mt-1">
+            {format(new Date(eventDate), 'yyyy年MM月dd日')}
+          </div>
         </div>
 
-        {/* 表单内容 */}
-        <div className="p-4 space-y-4">
-          {/* 基本信息 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 类型选择 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">类型</label>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Event Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              事件名称 *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="输入事件名称"
+              className="w-full crayon-input"
+              required
+            />
+          </div>
+
+          {/* Event Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              事件类型 *
+            </label>
+            <div className="space-y-3">
+              {/* Selected types */}
+              {formData.type && formData.type.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.type.map((type, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm text-white"
+                      style={{ backgroundColor: tags.type?.[type] || '#ccc' }}
+                    >
+                      {type}
+                      <button
+                        type="button"
+                        onClick={() => removeType(type)}
+                        className="ml-2 hover:opacity-75"
+                      >
+                        <CloseIcon size={14} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Type input */}
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={newType}
+                  onChange={(e) => setNewType(e.target.value)}
+                  onKeyPress={(e) => handleKeyPress(e, 'type', newType)}
+                  placeholder="输入或选择类型"
+                  className="flex-1 crayon-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => addType(newType)}
+                  disabled={!newType}
+                  className="px-3 py-2 crayon-button disabled:opacity-50"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+
+              {/* Preset types */}
               <div className="flex flex-wrap gap-2">
-                {typeOptions.map(type => (
+                {Object.entries(tags.type || {}).map(([type, color]) => (
                   <button
                     key={type}
                     type="button"
-                    onClick={() => handleTypeToggle(type)}
-                    className={`px-3 py-1 rounded-full text-sm border-2 transition-colors ${
-                      event.type.includes(type)
+                    onClick={() => addType(type)}
+                    disabled={formData.type?.includes(type)}
+                    className={`px-3 py-1 rounded-full text-xs transition-all ${
+                      formData.type?.includes(type)
                         ? 'text-white'
-                        : 'bg-white text-gray-700'
+                        : 'bg-white border border-gray-300 hover:border-gray-400'
                     }`}
                     style={{
-                      backgroundColor: event.type.includes(type) 
-                        ? tags.type[type] 
-                        : 'transparent',
-                      borderColor: tags.type[type],
-                      color: event.type.includes(type) ? 'white' : tags.type[type]
+                      backgroundColor: formData.type?.includes(type) ? (color as string) : undefined
                     }}
                   >
                     {type}
@@ -204,264 +217,135 @@ export default function EnhancedEditModal({ date, onClose, onSave }: EditModalPr
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* 优先级 */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                <Star size={14} className="inline mr-1" />
-                优先级
-              </label>
-              <div className="flex space-x-2">
-                {(['low', 'medium', 'high'] as const).map(level => (
+          {/* Place */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              地点 *
+            </label>
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={formData.place}
+                onChange={(e) => setFormData(prev => ({ ...prev, place: e.target.value }))}
+                placeholder="输入地点"
+                className="w-full crayon-input"
+                required
+              />
+              {/* Preset places */}
+              <div className="flex flex-wrap gap-2">
+                {tags.place?.map((place: string) => (
                   <button
-                    key={level}
+                    key={place}
                     type="button"
-                    onClick={() => setPriority(level)}
-                    className={`px-3 py-1 rounded-full text-sm border-2 ${
-                      priority === level ? 'text-white' : ''
-                    }`}
-                    style={{
-                      backgroundColor: priority === level ? priorityColors[level] : 'transparent',
-                      borderColor: priorityColors[level],
-                      color: priority === level ? 'white' : priorityColors[level]
-                    }}
+                    onClick={() => setFormData(prev => ({ ...prev, place }))}
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
                   >
-                    {level === 'low' ? '低' : level === 'medium' ? '中' : '高'}
+                    {place}
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* 名称 */}
+          {/* City */}
           <div>
-            <label className="block text-sm font-medium mb-2">名称</label>
-            <input
-              type="text"
-              value={event.name}
-              onChange={e => setEvent(prev => ({ ...prev, name: e.target.value }))}
-              className="crayon-input w-full"
-              placeholder="输入事件名称"
-            />
-          </div>
-
-          {/* 时间 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                <Clock size={14} className="inline mr-1" />
-                开始时间
-              </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              城市 *
+            </label>
+            <div className="space-y-2">
               <input
-                type="time"
-                value={startTime}
-                onChange={e => setStartTime(e.target.value)}
-                className="crayon-input w-full"
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                placeholder="输入城市"
+                className="w-full crayon-input"
+                required
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">结束时间</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={e => setEndTime(e.target.value)}
-                className="crayon-input w-full"
-              />
-            </div>
-          </div>
-
-          {/* 地点和城市 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">地点</label>
-              <div className="flex gap-2">
-                <select
-                  value={event.place}
-                  onChange={e => setEvent(prev => ({ ...prev, place: e.target.value }))}
-                  className="crayon-input flex-1"
-                >
-                  <option value="">选择地点</option>
-                  {placeOptions.map(place => (
-                    <option key={place} value={place}>{place}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={event.place}
-                  onChange={e => setEvent(prev => ({ ...prev, place: e.target.value }))}
-                  className="crayon-input flex-1"
-                  placeholder="或输入新地点"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">城市</label>
-              <div className="flex gap-2">
-                <select
-                  value={event.city}
-                  onChange={e => setEvent(prev => ({ ...prev, city: e.target.value }))}
-                  className="crayon-input flex-1"
-                >
-                  <option value="">选择城市</option>
-                  {cityOptions.map(city => (
-                    <option key={city} value={city}>{city}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={event.city}
-                  onChange={e => setEvent(prev => ({ ...prev, city: e.target.value }))}
-                  className="crayon-input flex-1"
-                  placeholder="或输入新城市"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 备注 */}
-          <div>
-            <label className="block text-sm font-medium mb-2">备注</label>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              className="crayon-input w-full h-24 resize-none"
-              placeholder="添加备注信息..."
-            />
-          </div>
-
-          {/* 重复事件 */}
-          <div className="border-2 border-gray-200 rounded-lg p-4">
-            <div className="flex items-center mb-3">
-              <input
-                type="checkbox"
-                id="recurring"
-                checked={recurring.enabled}
-                onChange={e => setRecurring(prev => ({ ...prev, enabled: e.target.checked }))}
-                className="mr-2"
-              />
-              <label htmlFor="recurring" className="flex items-center cursor-pointer">
-                <Repeat size={16} className="mr-1" />
-                重复事件
-              </label>
-            </div>
-
-            {recurring.enabled && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">重复频率</label>
-                  <select
-                    value={recurring.frequency}
-                    onChange={e => setRecurring(prev => ({ ...prev, frequency: e.target.value as any }))}
-                    className="crayon-input w-full"
-                  >
-                    <option value="daily">每日</option>
-                    <option value="weekly">每周</option>
-                    <option value="monthly">每月</option>
-                    <option value="yearly">每年</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">间隔</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={recurring.interval}
-                    onChange={e => setRecurring(prev => ({ ...prev, interval: parseInt(e.target.value) || 1 }))}
-                    className="crayon-input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">结束日期</label>
-                  <input
-                    type="date"
-                    value={recurring.endDate || ''}
-                    onChange={e => setRecurring(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="crayon-input w-full"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 颜色选择 */}
-          <div>
-            <label className="block text-sm font-medium mb-2">颜色</label>
-            <div className="flex items-center space-x-3">
-              <div 
-                className="w-8 h-8 rounded border-2 border-gray-300 cursor-pointer"
-                style={{ backgroundColor: event.color }}
-                onClick={() => setShowColorPicker(!showColorPicker)}
-              />
-              <button
-                type="button"
-                onClick={() => setShowColorPicker(!showColorPicker)}
-                className="crayon-button flex items-center space-x-2"
-              >
-                <Palette size={16} />
-                <span>选择颜色</span>
-              </button>
-            </div>
-
-            {showColorPicker && (
-              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-5 gap-2 mb-3">
-                  {DEFAULT_COLORS.map(color => (
-                    <button
-                      key={color}
-                      className="w-8 h-8 rounded border-2 border-gray-300 hover:scale-110 transition-transform"
-                      style={{ backgroundColor: color }}
-                      onClick={() => handleColorSelect(color)}
-                      title={color}
-                    />
-                  ))}
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Droplet size={16} />
-                  <input
-                    type="text"
-                    value={customColor}
-                    onChange={e => setCustomColor(e.target.value)}
-                    placeholder="#RRGGBB"
-                    className="crayon-input flex-1"
-                  />
+              {/* Preset cities */}
+              <div className="flex flex-wrap gap-2">
+                {tags.city?.map((city: string) => (
                   <button
-                    onClick={handleCustomColor}
-                    className="crayon-button"
+                    key={city}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, city }))}
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
                   >
-                    应用
+                    {city}
                   </button>
-                </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* 底部按钮 */}
-        <div className="flex justify-between p-4 border-t">
-          <button
-            onClick={handleDelete}
-            className="crayon-button bg-red-50 text-red-600 border-red-300"
-          >
-            删除
-          </button>
-          
-          <div className="flex space-x-2">
+          {/* Color */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              颜色标识
+            </label>
+            <div className="space-y-3">
+              {/* Current color */}
+              <div className="flex items-center space-x-3">
+                <div
+                  className="w-8 h-8 rounded-lg border-2 border-gray-300 cursor-pointer"
+                  style={{ backgroundColor: formData.color }}
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                />
+                <span className="text-sm text-gray-600">{formData.color}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  更改颜色
+                </button>
+              </div>
+
+              {/* Color picker */}
+              {showColorPicker && (
+                <div className="p-3 border border-gray-200 rounded-lg">
+                  <div className="grid grid-cols-5 gap-2">
+                    {DEFAULT_COLORS.map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, color }))
+                          setShowColorPicker(false)
+                        }}
+                        className={`w-full h-8 rounded-lg border-2 transition-all ${
+                          formData.color === color ? 'border-gray-800' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex space-x-3 pt-4 border-t border-gray-200">
             <button
+              type="button"
               onClick={onClose}
-              className="crayon-button"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={isLoading}
             >
               取消
             </button>
             <button
-              onClick={handleSave}
-              className="crayon-button bg-black text-white"
+              type="submit"
+              disabled={!isValid || isLoading}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
-              保存
+              <Save size={16} />
+              <span>{isLoading ? '保存中...' : '保存'}</span>
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   )

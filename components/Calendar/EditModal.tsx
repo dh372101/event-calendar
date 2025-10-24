@@ -168,7 +168,7 @@ export default function EditModal({ date, onClose, onSave }: EditModalProps) {
                 className="crayon-input flex-1"
               >
                 <option value="">选择城市</option>
-                {cityOptions.map(city => (
+                {cityOptions.map((city: string) => (
                   <option key={city} value={city}>{city}</option>
                 ))}
               </select>
