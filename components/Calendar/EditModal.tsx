@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { X, Palette, EyeDropper } from 'lucide-react'
+import { X, Palette, Droplet } from 'lucide-react'
 import { EventData, TagConfig } from '@/types'
 import { getEvent, saveEvent, deleteEvent, getStorageData } from '@/utils/storage'
 
@@ -216,7 +216,7 @@ export default function EditModal({ date, onClose, onSave }: EditModalProps) {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <EyeDropper size={16} />
+                  <Droplet size={16} />
                   <input
                     type="text"
                     value={customColor}
