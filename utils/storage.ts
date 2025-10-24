@@ -28,6 +28,11 @@ const STORAGE_KEYS = {
 
 // 获取所有数据
 export function getStorageData(): StorageData {
+  // 检查是否在浏览器环境中
+  if (typeof window === 'undefined') {
+    return { events: {}, tags: DEFAULT_TAGS, settings: DEFAULT_SETTINGS }
+  }
+  
   const events = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '{}')
   const tags = JSON.parse(localStorage.getItem(STORAGE_KEYS.TAGS) || JSON.stringify(DEFAULT_TAGS))
   const settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS))
@@ -37,6 +42,8 @@ export function getStorageData(): StorageData {
 
 // 保存事件数据
 export function saveEvent(event: EventData): void {
+  if (typeof window === 'undefined') return
+  
   const events = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '{}')
   events[event.date] = event
   localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events))
@@ -44,6 +51,8 @@ export function saveEvent(event: EventData): void {
 
 // 删除事件数据
 export function deleteEvent(date: string): void {
+  if (typeof window === 'undefined') return
+  
   const events = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '{}')
   delete events[date]
   localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events))
@@ -57,6 +66,8 @@ export function getEvent(date: string): EventData | null {
 
 // 保存标签配置
 export function saveTags(tags: TagConfig): void {
+  if (typeof window === 'undefined') return
+  
   localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tags))
 }
 
@@ -67,6 +78,8 @@ export function saveSettings(settings: SettingsData): void {
 
 // 清除所有数据
 export function clearAllData(): void {
+  if (typeof window === 'undefined') return
+  
   localStorage.removeItem(STORAGE_KEYS.EVENTS)
   localStorage.removeItem(STORAGE_KEYS.TAGS)
   localStorage.removeItem(STORAGE_KEYS.SETTINGS)
