@@ -370,7 +370,7 @@ export default function Calendar() {
               }`}
               role="gridcell"
               aria-label={`${format(date, 'yyyy年MM月dd日')}${isToday ? ' (今天)' : ''}${event ? ` - ${event.name}` : ''}`}
-              aria-selected={selectedDate && isSameDay(date, selectedDate)}
+              aria-selected={selectedDate && isSameDay(date, selectedDate) ? true : undefined}
               tabIndex={isCurrentMonth ? 0 : -1}
             >
               <div className="calendar-day-number">
