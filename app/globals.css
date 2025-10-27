@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 手绘蜡笔风格样式 */
+@layer base {
+  body {
+    @apply bg-white text-black font-sans;
+  }
+  
+  /* 蜡笔质感边框 */
+  .crayon-border {
+    border: 2px solid #000;
+    border-radius: 8px;
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
+  }
+  
+  .crayon-border-thin {
+    border: 1px solid #000;
+    border-radius: 6px;
+    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@layer components {
+  /* 菜单项选中样式 */
+  .menu-item-active {
+    @apply crayon-border bg-black text-white;
+  }
+  
+  .menu-item-inactive {
+    @apply crayon-border-thin bg-white text-black hover:bg-gray-50;
+  }
+  
+  /* 日历日期样式 */
+  .calendar-date {
+    @apply crayon-border-thin p-2 min-h-[80px] cursor-pointer hover:bg-gray-50;
+  }
+  
+  .calendar-date-today {
+    @apply bg-yellow-50;
+  }
+  
+  /* 事件标签样式 */
+  .event-tag {
+    @apply inline-block px-2 py-1 text-xs rounded-full crayon-border-thin;
+  }
+  
+  /* 模态框样式 */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+  }
+  
+  .modal-content {
+    @apply bg-white crayon-border p-6 max-w-md w-full mx-4;
+  }
+}
+
+/* 自定义字体加载 */
+@font-face {
+  font-family: 'Crayon';
+  src: url('/fonts/crayon.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .mobile-menu-hidden {
+    transform: translateX(-100%);
+  }
+  
+  .mobile-menu-visible {
+    transform: translateX(0);
+  }
+}
