@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import '../public/styles/globals.css'
+import './styles/globals.css'
 import Menu from '@/components/Menu'
-import { StorageUtil } from '@/utils/storage'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,14 +16,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN">
-      <head>
-        <style jsx global>{`
-          :root {
-            --font-family: '${inter.style.fontFamily}, system-ui, sans-serif';
-          }
-        `}</style>
-      </head>
+    <html lang="zh-CN" style={{ fontFamily: `'${inter.style.fontFamily}', system-ui, sans-serif` }}>
+      <head />
       <body className={inter.className}>
         <div className="main-layout">
           <Menu />
