@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    appDir: true,
+    serverComponentsExternalPackages: ['puppeteer']
   },
   images: {
-    unoptimized: true
-  }
+    domains: ['localhost'],
+  },
 }
 
 module.exports = nextConfig

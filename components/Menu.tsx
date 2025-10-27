@@ -1,132 +1,173 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { 
-  Calendar, 
-  Tag, 
-  Image, 
-  Download, 
-  Settings, 
-  ChevronLeft,
-  ChevronRight,
-  Menu as MenuIcon
-} from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { StorageUtil } from '@/utils/storage';
+import { Settings } from '@/types';
 
-type MenuItem = {
-  id: 'calendar' | 'tags' | 'export-image' | 'export-data' | 'settings'
-  label: string
-  icon: React.ReactNode
+interface MenuItem {
+  id: string;
+  label: string;
+  path: string;
+  icon: string;
 }
 
-interface MenuProps {
-  activeModule: string
-  onModuleChange: (module: string) => void
-  collapsed: boolean
-  onToggleCollapse: () => void
-}
+export default function Menu() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
-const menuItems: MenuItem[] = [
-  { id: 'calendar', label: '日历', icon: <Calendar size={20} /> },
-  { id: 'tags', label: '标签编辑', icon: <Tag size={20} /> },
-  { id: 'export-image', label: '导出图片', icon: <Image size={20} /> },
-  { id: 'export-data', label: '导出数据', icon: <Download size={20} /> },
-  { id: 'settings', label: '设置', icon: <Settings size={20} /> },
-]
+  const menuItems: MenuItem[] = [
+    { id: 'calendar', label: '日历', path: '/calendar', icon: '📅' },
+    { id: 'tags', label: '标签编辑', path: '/tags', icon: '🏷️' },
+    { id: 'export-image', label: '导出图片', path: '/export-image', icon: '🖼️' },
+    { id: 'export-data', label: '导出数据', path: '/export-data', icon: '📊' },
+    { id: 'settings', label: '设置', path: '/settings', icon: '⚙️' },
+  ];
 
-export default function Menu({ activeModule, onModuleChange, collapsed, onToggleCollapse }: MenuProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
-  // 移动端菜单控制
+  // 检测移动端
   useEffect(() => {
-    const handleResize = () => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
       if (window.innerWidth >= 768) {
-        setIsMobileMenuOpen(false)
+        setIsMobileMenuOpen(false);
       }
-    }
+    };
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
-  const handleMenuItemClick = (itemId: string) => {
-    onModuleChange(itemId)
-    if (window.innerWidth < 768) {
-      setIsMobileMenuOpen(false)
+  // 加载折叠状态
+  useEffect(() => {
+    if (!isMobile) {
+      const settings = StorageUtil.getSettings();
+      setIsCollapsed(settings.menuCollapsed);
     }
+  }, [isMobile]);
+
+  // 保存折叠状态
+  const handleToggleCollapse = () => {
+    if (isMobile) {
+      setIsMobileMenuOpen(!isMobileMenuOpen);
+    } else {
+      const newCollapsed = !isCollapsed;
+      setIsCollapsed(newCollapsed);
+
+      const settings = StorageUtil.getSettings();
+      StorageUtil.saveSettings({
+        ...settings,
+        menuCollapsed: newCollapsed,
+      });
+    }
+  };
+
+  // 菜单项点击处理
+  const handleMenuClick = (path: string) => {
+    router.push(path);
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  // 获取当前激活项
+  const getActiveItem = () => {
+    return menuItems.find(item => pathname === item.path);
+  };
+
+  const activeItem = getActiveItem();
+
+  if (isMobile) {
+    return (
+      <>
+        {/* 移动端菜单按钮 */}
+        <button
+          onClick={handleToggleCollapse}
+          className="fixed top-4 left-4 z-50 p-3 bg-white border-2 border-black rounded-lg shadow-md hover:bg-black hover:text-white transition-colors md:hidden"
+          aria-label="切换菜单"
+        >
+          <div className="w-5 h-5 flex flex-col justify-center space-y-1">
+            <div className={`h-0.5 bg-current transition-transform ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></div>
+            <div className={`h-0.5 bg-current transition-opacity ${isMobileMenuOpen ? 'opacity-0' : ''}`}></div>
+            <div className={`h-0.5 bg-current transition-transform ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></div>
+          </div>
+        </button>
+
+        {/* 移动端菜单覆盖层 */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)} />
+        )}
+
+        {/* 移动端菜单 */}
+        <div className={`fixed top-0 left-0 z-50 h-full w-72 bg-white border-r-2 border-black transform transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <div className="p-4 border-b-2 border-black">
+            <h2 className="text-lg font-bold">📅 演出日历</h2>
+          </div>
+          <nav className="p-4">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleMenuClick(item.path)}
+                className={`w-full text-left p-3 mb-2 rounded-lg border-2 transition-all ${
+                  activeItem?.id === item.id
+                    ? 'bg-black text-white border-black'
+                    : 'border-gray-300 hover:border-black hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-2">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </>
+    );
   }
 
-  const menuContent = (
-    <div className={`flex flex-col space-y-2 p-4 ${collapsed ? 'w-16' : 'w-64'}`}>
+  // 桌面端菜单
+  return (
+    <div className={`h-screen bg-white border-r-2 border-black transition-all duration-300 ${
+      isCollapsed ? 'w-20' : 'w-64'
+    }`}>
       {/* 菜单头部 */}
-      <div className="flex items-center justify-between mb-4">
-        {!collapsed && (
-          <h1 className="text-xl font-bold crayon-border px-3 py-2">演出日历</h1>
-        )}
+      <div className="p-4 border-b-2 border-black flex items-center justify-between">
+        {!isCollapsed && <h2 className="text-lg font-bold">📅 演出日历</h2>}
         <button
-          onClick={onToggleCollapse}
-          className="crayon-border-thin p-2 hover:bg-gray-50"
-          title={collapsed ? '展开菜单' : '折叠菜单'}
+          onClick={handleToggleCollapse}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          aria-label={isCollapsed ? '展开菜单' : '折叠菜单'}
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          <div className="w-5 h-5 flex flex-col justify-center space-y-1">
+            <div className={`h-0.5 bg-black transition-transform ${isCollapsed ? 'rotate-45 translate-y-1.5' : ''}`}></div>
+            <div className={`h-0.5 bg-black transition-opacity ${isCollapsed ? 'opacity-0' : ''}`}></div>
+            <div className={`h-0.5 bg-black transition-transform ${isCollapsed ? '-rotate-45 -translate-y-1.5' : ''}`}></div>
+          </div>
         </button>
       </div>
 
       {/* 菜单项 */}
-      <nav className="space-y-2">
+      <nav className="p-4">
         {menuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => handleMenuItemClick(item.id)}
-            className={`w-full flex items-center p-3 transition-all duration-200 ${
-              activeModule === item.id 
-                ? 'menu-item-active' 
-                : 'menu-item-inactive'
-            } ${collapsed ? 'justify-center' : 'justify-start space-x-3'}`}
-            title={collapsed ? item.label : ''}
+            onClick={() => handleMenuClick(item.path)}
+            className={`w-full text-left p-3 mb-2 rounded-lg border-2 transition-all crayon-texture ${
+              activeItem?.id === item.id
+                ? 'bg-black text-white border-black'
+                : 'border-gray-300 hover:border-black hover:bg-gray-50'
+            }`}
+            title={isCollapsed ? item.label : undefined}
           >
-            {item.icon}
-            {!collapsed && <span>{item.label}</span>}
+            <span className="text-lg">{item.icon}</span>
+            {!isCollapsed && <span className="ml-2">{item.label}</span>}
           </button>
         ))}
       </nav>
     </div>
-  )
-
-  return (
-    <>
-      {/* 移动端菜单按钮 */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 crayon-border p-2 bg-white"
-      >
-        <MenuIcon size={20} />
-      </button>
-
-      {/* 桌面端菜单 */}
-      <aside className="hidden md:block fixed left-0 top-0 h-full bg-white border-r-2 border-black z-40">
-        {menuContent}
-      </aside>
-
-      {/* 移动端菜单 */}
-      <div className={`md:hidden fixed inset-0 z-40 transition-transform duration-300 ${
-        isMobileMenuOpen ? 'mobile-menu-visible' : 'mobile-menu-hidden'
-      }`}>
-        <div 
-          className="absolute inset-0 bg-black bg-opacity-50"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-        <aside className="absolute left-0 top-0 h-full bg-white border-r-2 border-black w-64">
-          {menuContent}
-        </aside>
-      </div>
-
-      {/* 移动端菜单打开时的遮罩 */}
-      {isMobileMenuOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-    </>
-  )
+  );
 }

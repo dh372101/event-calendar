@@ -1,27 +1,23 @@
-# 演出日历系统
+# 🎭 演出日历系统
 
-一个手绘蜡笔风格的事件日历管理系统，基于 Next.js 构建。
+一个简洁的个人演出活动管理工具，采用手绘风格界面设计，支持本地数据存储和多种导出功能。
 
-## 功能特性
+## ✨ 特性
 
-- 🎨 **手绘蜡笔风格** - 独特的黑白手绘UI设计
-- 📅 **智能日历** - 支持事件添加、编辑、删除
-- 🏷️ **标签管理** - 类型、地点、城市标签自定义
-- 📤 **数据导出** - 支持图片、CSV、JSON格式导出
-- 📥 **数据导入** - 支持CSV/JSON格式导入
-- ⚙️ **个性化设置** - 字体切换、数据管理
-- 📱 **响应式设计** - 完美适配桌面和移动端
+- 📅 **日历视图** - 清晰的月历展示，支持事件添加和编辑
+- 🎨 **手绘风格** - 独特的蜡笔线条和手写字体设计
+- 🏷️ **标签管理** - 自定义事件类型、地点和城市标签
+- 📊 **数据导出** - 支持CSV、JSON和图片格式导出
+- 💾 **本地存储** - 数据完全存储在浏览器本地，保护隐私
+- 📱 **响应式设计** - 完美适配桌面端和移动端
+- ⚙️ **个性化设置** - 支持自定义字体和界面偏好
 
-## 技术栈
+## 🚀 快速开始
 
-- **前端框架**: Next.js 14 (App Router)
-- **样式**: Tailwind CSS + 自定义手绘样式
-- **图标**: Lucide React
-- **日期处理**: date-fns
-- **图片生成**: html2canvas
-- **部署**: Vercel
+### 环境要求
 
-## 快速开始
+- Node.js 18+
+- npm 或 yarn
 
 ### 安装依赖
 
@@ -29,13 +25,13 @@
 npm install
 ```
 
-### 开发模式
+### 启动开发服务器
 
 ```bash
 npm run dev
 ```
 
-访问 [http://localhost:3000](http://localhost:3000) 查看应用。
+打开浏览器访问 [http://localhost:3000](http://localhost:3000)
 
 ### 构建生产版本
 
@@ -44,98 +40,135 @@ npm run build
 npm start
 ```
 
-## 项目结构
+## 📱 使用指南
+
+### 1. 添加演出事件
+
+- 点击日历上的任意日期
+- 在弹出的编辑窗口中填写事件信息：
+  - **类型**：选择Live、干饭、旅行、运动（可多选）
+  - **名称**：演出活动名称
+  - **地点**：演出场地
+  - **城市**：所在城市
+  - **颜色**：为事件选择标记颜色
+
+### 2. 管理标签
+
+在"标签编辑"页面可以：
+- 修改事件类型的颜色
+- 添加或删除地点标签
+- 添加或删除城市标签
+
+### 3. 导出数据
+
+支持多种导出方式：
+
+- **导出图片**：将指定月份的日历导出为PNG图片
+- **导出CSV**：导出事件数据为CSV格式，可在Excel中打开
+- **导出JSON**：导出为JSON格式，便于数据备份和迁移
+
+### 4. 个性化设置
+
+在"设置"页面可以：
+- 选择不同的字体风格
+- 设置菜单默认折叠状态
+- 备份和恢复数据
+- 查看系统信息
+
+## 🎨 界面设计
+
+### 手绘风格特点
+
+- **蜡笔线条边框**：所有组件采用手绘风格的边框效果
+- **圆润字体**：支持多种手写风格字体
+- **温暖配色**：采用黑白主色调，搭配彩色标签
+- **微动画**：悬停和点击时的细微动画效果
+
+### 响应式设计
+
+- **桌面端**：侧边栏菜单默认展开
+- **移动端**：汉堡菜单，不遮挡主要内容
+- **自适应布局**：根据屏幕尺寸自动调整
+
+## 📁 项目结构
 
 ```
-event-calendar/
-├── app/                    # Next.js App Router
-│   ├── api/               # Serverless API接口
-│   │   ├── exportImage/   # 图片导出API
-│   │   ├── exportData/    # 数据导出API
-│   │   └── importData/    # 数据导入API
-│   ├── globals.css        # 全局样式
+ec-cc/
+├── app/                    # Next.js 应用路由
+│   ├── calendar/           # 日历页面
+│   ├── tags/              # 标签编辑页面
+│   ├── export-image/      # 导出图片页面
+│   ├── export-data/       # 导出数据页面
+│   ├── settings/          # 设置页面
 │   ├── layout.tsx         # 根布局
-│   └── page.tsx           # 主页
-├── components/            # React组件
-│   ├── Calendar/          # 日历相关组件
-│   │   ├── index.tsx     # 日历主组件
-│   │   ├── CalendarView.tsx # 日历视图
-│   │   ├── EventDetail.tsx  # 事件详情
-│   │   └── EditModal.tsx  # 编辑弹窗
-│   ├── Menu.tsx           # 菜单导航
-│   ├── TagsEditor.tsx     # 标签编辑
-│   ├── ExportImage.tsx    # 导出图片
-│   ├── ExportData.tsx     # 导出数据
-│   └── Settings.tsx       # 设置
-├── types/                 # TypeScript类型定义
-│   └── event.ts          # 事件数据类型
-└── public/               # 静态资源
-    └── fonts/            # 字体文件
+│   └── page.tsx          # 首页
+├── components/            # React 组件
+│   ├── Menu.tsx          # 菜单组件
+│   ├── Calendar/         # 日历相关组件
+│   ├── TagsEditor.tsx    # 标签编辑器
+│   ├── ExportImage.tsx   # 导出图片
+│   ├── ExportData.tsx    # 导出数据
+│   └── Settings.tsx      # 设置组件
+├── public/               # 静态资源
+│   ├── styles/          # 样式文件
+│   └── fonts/           # 字体文件
+├── utils/               # 工具函数
+│   ├── storage.ts       # 本地存储工具
+│   └── date.ts          # 日期处理工具
+├── types/               # TypeScript 类型定义
+└── README.md           # 项目说明
 ```
 
-## 数据存储
+## 🔧 技术栈
 
-系统使用浏览器本地存储(LocalStorage)保存数据：
+- **前端框架**：Next.js 15 (React 18)
+- **开发语言**：TypeScript
+- **样式**：CSS-in-JS + 自定义CSS
+- **存储**：浏览器 LocalStorage
+- **导出功能**：html2canvas, papaparse
+- **部署**：Vercel (推荐)
 
-- `events` - 事件数据
-- `tags` - 标签配置
-- `settings` - 用户设置
+## 🌐 部署
 
-## API接口
+### Vercel 部署 (推荐)
 
-### 导出图片
-- **路径**: `/api/exportImage`
-- **方法**: POST
-- **参数**: `{ startMonth, endMonth }`
-
-### 导出数据
-- **路径**: `/api/exportData`
-- **方法**: POST
-- **参数**: `{ format, startMonth, endMonth, events }`
-
-### 导入数据
-- **路径**: `/api/importData`
-- **方法**: POST
-- **参数**: 文件上传 (multipart/form-data)
-
-## 部署
-
-### Vercel部署
-
-1. 将代码推送到GitHub仓库
-2. 在Vercel中导入项目
-3. 配置环境变量（如有需要）
-4. 部署完成
+1. 将代码推送到 GitHub 仓库
+2. 在 [Vercel](https://vercel.com) 中导入项目
+3. 自动部署完成
 
 ### 其他平台
-
-项目支持部署到任何支持Node.js的平台：
 
 ```bash
 npm run build
 ```
 
-## 开发说明
+构建完成后，将 `.next` 目录部署到任何支持 Node.js 的平台。
 
-### 添加新字体
+## 📊 数据存储
 
-1. 将字体文件放入 `public/fonts/` 目录
-2. 在 `app/globals.css` 中添加 `@font-face` 定义
-3. 在 `components/Settings.tsx` 的 `availableFonts` 数组中添加新字体
+系统使用浏览器本地存储 (LocalStorage) 保存数据：
 
-### 自定义样式
+- **events**：所有事件数据
+- **tags**：标签配置
+- **settings**：用户设置
 
-系统使用Tailwind CSS + 自定义类名：
+数据完全存储在本地，不会上传到服务器，保护用户隐私。
 
-- `.crayon-border` - 手绘边框样式
-- `.crayon-border-thin` - 细手绘边框
-- `.menu-item-active` - 激活菜单项样式
-- `.calendar-date` - 日历日期样式
+## 🎯 浏览器支持
 
-## 许可证
+- Chrome 88+
+- Firefox 85+
+- Safari 14+
+- Edge 88+
+
+## 📄 许可证
 
 MIT License
 
-## 版本历史
+## 🤝 贡献
 
-- v1.0.0 - 初始版本，实现基础功能
+欢迎提交 Issue 和 Pull Request！
+
+## 📞 联系
+
+如有问题或建议，请通过 GitHub Issues 联系。
